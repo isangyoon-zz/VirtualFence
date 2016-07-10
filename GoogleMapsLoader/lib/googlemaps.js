@@ -11,8 +11,7 @@
 
   let google          = null,
       script          = null,
-      isLoaded        = false,
-      loaderFunction  = null;
+      isLoaded        = false;
 
   let callbacks = [],
       events    = [];
@@ -88,7 +87,7 @@
       VirtualFenceGoogleMapsLoader.CHANNEL              = null;
       VirtualFenceGoogleMapsLoader.CLIENT               = null;
 
-      google  = null;
+      google      = null;
       isLoaded    = null;
       callbacks   = [];
       events      = [];
@@ -99,12 +98,6 @@
       {
         script.parentElement.removeChild(script);
         script = null;
-      }
-
-      if (loaderFunction !== null)
-      {
-        VirtualFenceGoogleMapsLoader.create = loaderFunction;
-        loaderFunction = null;
       }
 
       if (callback) callback();
