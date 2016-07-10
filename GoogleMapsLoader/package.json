@@ -8,9 +8,9 @@
     "GoogleMaps",
     "GIS"
   ],
-  "main"            : "./src/index.js",
+  "main"            : "src/index.js",
   "scripts"         : {
-    "test"  : "echo \"Error: no test specified\" && exit 1"
+    "test"            : "echo \"Error: no test specified\" && exit 1"
   },
   "author"          : {
     "name"            : "Sangyoon Lee",
@@ -22,9 +22,5 @@
     "url"             : "https://github.com/isangyoon/VirtualFence/GoogleMapsLoader.git"
   },
   "devDependencies" : {
-    "phantomjs"       : "^2.1.7",
-		"mocha"           : "^2.5.3",
-		"mocha-phantomjs" : "^4.1.0",
-		"chai"            : "^3.5.0"
 	}
 }

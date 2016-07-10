@@ -9,7 +9,7 @@
 
   const LastReleasedVersion = '3.24'; // Latest Release Version 3.24 (Forzen Version 3.23)
 
-  let googlemaps      = null,
+  let google          = null,
       script          = null,
       isLoaded        = false,
       loaderFunction  = null;
@@ -27,10 +27,9 @@
   VirtualFenceGoogleMapsLoader.CHANNEL              = null;
   VirtualFenceGoogleMapsLoader.CLIENT               = null;
   VirtualFenceGoogleMapsLoader.WINDOW_CALLBACK_NAME = '__google_maps_api_provider_initializator__';
-  VirtualFenceGoogleMapsLoader._googleMockApiObject = {};
 
   VirtualFenceGoogleMapsLoader.load = (callback) => {
-    if (googlemaps === null)
+    if (google === null)
     {
       if (isLoaded === true)
       {
@@ -41,16 +40,17 @@
         isLoaded = true;
 
         window[VirtualFenceGoogleMapsLoader.WINDOW_CALLBACK_NAME] = () => { ready(callback); };
+        VirtualFenceGoogleMapsLoader.create();
       }
     }
     else if (callback)
     {
-      callback(googlemaps);
+      callback(google);
     }
   };
 
   VirtualFenceGoogleMapsLoader.loaded = () => {
-    return googlemaps !== null;
+    return google !== null;
   };
 
   VirtualFenceGoogleMapsLoader.onLoad = (callback) => { events.push(callback); };
@@ -78,8 +78,8 @@
     return URL;
   };
 
-  VirtualFenceGoogleMapsLoader.purge = (callback) => {
-    let purge = () => {
+  VirtualFenceGoogleMapsLoader.unload = (callback) => {
+    let unload = () => {
       VirtualFenceGoogleMapsLoader.KEY                  = null;
       VirtualFenceGoogleMapsLoader.VERSION              = LastReleasedVersion;
       VirtualFenceGoogleMapsLoader.LIBRARIES            = [];
@@ -88,12 +88,12 @@
       VirtualFenceGoogleMapsLoader.CHANNEL              = null;
       VirtualFenceGoogleMapsLoader.CLIENT               = null;
 
-      googlemaps  = null;
+      google  = null;
       isLoaded    = null;
       callbacks   = [];
       events      = [];
 
-      if (typeof window.googlemaps !== 'undefined') delete window.googlemaps;
+      if (typeof window.google !== 'undefined') delete window.google;
       if (typeof window[VirtualFenceGoogleMapsLoader.WINDOW_CALLBACK_NAME] !== 'undefined') delete window[VirtualFenceGoogleMapsLoader.WINDOW_CALLBACK_NAME];
       if (script !== null)
       {
@@ -110,34 +110,25 @@
       if (callback) callback();
     };
 
-    if (isLoaded) VirtualFenceGoogleMapsLoader.load(() => { release(); });
-    else release();
-  };
-
-  VirtualFenceGoogleMapsLoader.mock = () => {
-    loaderFunction = VirtualFenceGoogleMapsLoader.create;
-
-    VirtualFenceGoogleMapsLoader.create = () => {
-      window.googlemaps = VirtualFenceGoogleMapsLoader._googleMockApiObject;
-      window[VirtualFenceGoogleMapsLoader.WINDOW_CALLBACK_NAME]();
-    };
+    if (isLoaded) VirtualFenceGoogleMapsLoader.load(() => { unload(); });
+    else unload();
   };
 
   let ready = (callback) => {
     isLoaded = false;
 
-    if (googlemaps === null) googlemaps = window.googlemaps;
+    if (google === null) google = window.google;
 
     for (let i = 0; i < events.length; ++i)
     {
-      events[i](googlemaps);
+      events[i](google);
     }
 
-    if (callback) callback(googlemaps);
+    if (callback) callback(google);
 
     for (let i = 0; i < callbacks.length; ++i)
     {
-      callbacks[i](googlemaps);
+      callbacks[i](google);
     }
 
     callbacks = [];
