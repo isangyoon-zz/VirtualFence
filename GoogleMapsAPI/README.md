@@ -1,4 +1,4 @@
-# VirtualFence Google Maps API
+# Google Maps API for VirtualFence
 Wrapper for asynchronously used Google Maps API for VirtualFence Client.
 This can be used only for CommonJS environments.
 
