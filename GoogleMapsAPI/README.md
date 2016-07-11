@@ -44,4 +44,5 @@ It is already in `window` object.**
 
 ## Changelog list
 * 1.0.0
-  + First commit
+  + Initial version
+  + Support CommonJS, AMD, Node.js
