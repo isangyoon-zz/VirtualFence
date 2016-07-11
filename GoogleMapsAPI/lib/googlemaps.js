@@ -3,7 +3,7 @@
 
   if (typeof define === 'function' && define.amd) define(factory);
   else if (typeof exports === 'object') module.exports = factory();
-  else root.VirtualFenceGoogleMapsLoader = factory();
+  else root.VirtualFenceGoogleMaps = factory();
 })(typeof window !== 'undefined' ? window : null, () => {
   'use strict';
 
@@ -16,18 +16,18 @@
   let callbacks = [],
       events    = [];
 
-  let VirtualFenceGoogleMapsLoader                  = {};
-  VirtualFenceGoogleMapsLoader.URL                  = 'https://maps.googleapis.com/maps/api/js';
-  VirtualFenceGoogleMapsLoader.KEY                  = null;
-  VirtualFenceGoogleMapsLoader.VERSION              = LastReleasedVersion;
-  VirtualFenceGoogleMapsLoader.LIBRARIES            = [];
-  VirtualFenceGoogleMapsLoader.LANGUAGE             = null;
-  VirtualFenceGoogleMapsLoader.REGION               = null;
-  VirtualFenceGoogleMapsLoader.CHANNEL              = null;
-  VirtualFenceGoogleMapsLoader.CLIENT               = null;
-  VirtualFenceGoogleMapsLoader.WINDOW_CALLBACK_NAME = '__google_maps_api_provider_initializator__';
+  let VirtualFenceGoogleMaps                  = {};
+  VirtualFenceGoogleMaps.URL                  = 'https://maps.googleapis.com/maps/api/js';
+  VirtualFenceGoogleMaps.KEY                  = null;
+  VirtualFenceGoogleMaps.VERSION              = LastReleasedVersion;
+  VirtualFenceGoogleMaps.LIBRARIES            = [];
+  VirtualFenceGoogleMaps.LANGUAGE             = null;
+  VirtualFenceGoogleMaps.REGION               = null;
+  VirtualFenceGoogleMaps.CHANNEL              = null;
+  VirtualFenceGoogleMaps.CLIENT               = null;
+  VirtualFenceGoogleMaps.WINDOW_CALLBACK_NAME = '__google_maps_api_provider_initializator__';
 
-  VirtualFenceGoogleMapsLoader.load = (callback) => {
+  VirtualFenceGoogleMaps.load = (callback) => {
     if (google === null)
     {
       if (isLoaded === true)
@@ -38,8 +38,8 @@
       {
         isLoaded = true;
 
-        window[VirtualFenceGoogleMapsLoader.WINDOW_CALLBACK_NAME] = () => { ready(callback); };
-        VirtualFenceGoogleMapsLoader.create();
+        window[VirtualFenceGoogleMaps.WINDOW_CALLBACK_NAME] = () => { ready(callback); };
+        VirtualFenceGoogleMaps.create();
       }
     }
     else if (callback)
@@ -48,44 +48,44 @@
     }
   };
 
-  VirtualFenceGoogleMapsLoader.loaded = () => {
+  VirtualFenceGoogleMaps.loaded = () => {
     return google !== null;
   };
 
-  VirtualFenceGoogleMapsLoader.onLoad = (callback) => { events.push(callback); };
+  VirtualFenceGoogleMaps.onLoad = (callback) => { events.push(callback); };
 
-  VirtualFenceGoogleMapsLoader.create = () => {
+  VirtualFenceGoogleMaps.create = () => {
     script      = document.createElement('script');
     script.type = 'text/javascript';
-    script.src  = VirtualFenceGoogleMapsLoader.scriptURL();
+    script.src  = VirtualFenceGoogleMaps.scriptURL();
 
     document.body.appendChild(script);
   };
 
-  VirtualFenceGoogleMapsLoader.scriptURL = () => {
-    let URL = VirtualFenceGoogleMapsLoader.URL;
+  VirtualFenceGoogleMaps.scriptURL = () => {
+    let URL = VirtualFenceGoogleMaps.URL;
 
-    URL += '?callback=' + VirtualFenceGoogleMapsLoader.WINDOW_CALLBACK_NAME;
-    if (VirtualFenceGoogleMapsLoader.VERSION)               URL += '&v=' + VirtualFenceGoogleMapsLoader.VERSION;
-    if (VirtualFenceGoogleMapsLoader.KEY)                   URL += '&key=' + VirtualFenceGoogleMapsLoader.KEY;
-    if (VirtualFenceGoogleMapsLoader.LIBRARIES.length > 0)  URL += '&libraries=' + VirtualFenceGoogleMapsLoader.LIBRARIES.join(',');
-    if (VirtualFenceGoogleMapsLoader.LANGUAGE)              URL += '&language=' + VirtualFenceGoogleMapsLoader.LANGUAGE;
-    if (VirtualFenceGoogleMapsLoader.REGION)                URL += '&region=' + VirtualFenceGoogleMapsLoader.REGION;
-    if (VirtualFenceGoogleMapsLoader.CHANNEL)               URL += '&channel=' + VirtualFenceGoogleMapsLoader.CHANNEL;
-    if (VirtualFenceGoogleMapsLoader.CLIENT)                URL += '&client=' + VirtualFenceGoogleMapsLoader.CLIENT;
+    URL += '?callback=' + VirtualFenceGoogleMaps.WINDOW_CALLBACK_NAME;
+    if (VirtualFenceGoogleMaps.VERSION)               URL += '&v=' + VirtualFenceGoogleMaps.VERSION;
+    if (VirtualFenceGoogleMaps.KEY)                   URL += '&key=' + VirtualFenceGoogleMaps.KEY;
+    if (VirtualFenceGoogleMaps.LIBRARIES.length > 0)  URL += '&libraries=' + VirtualFenceGoogleMaps.LIBRARIES.join(',');
+    if (VirtualFenceGoogleMaps.LANGUAGE)              URL += '&language=' + VirtualFenceGoogleMaps.LANGUAGE;
+    if (VirtualFenceGoogleMaps.REGION)                URL += '&region=' + VirtualFenceGoogleMaps.REGION;
+    if (VirtualFenceGoogleMaps.CHANNEL)               URL += '&channel=' + VirtualFenceGoogleMaps.CHANNEL;
+    if (VirtualFenceGoogleMaps.CLIENT)                URL += '&client=' + VirtualFenceGoogleMaps.CLIENT;
 
     return URL;
   };
 
-  VirtualFenceGoogleMapsLoader.unload = (callback) => {
+  VirtualFenceGoogleMaps.unload = (callback) => {
     let unload = () => {
-      VirtualFenceGoogleMapsLoader.KEY                  = null;
-      VirtualFenceGoogleMapsLoader.VERSION              = LastReleasedVersion;
-      VirtualFenceGoogleMapsLoader.LIBRARIES            = [];
-      VirtualFenceGoogleMapsLoader.LANGUAGE             = null;
-      VirtualFenceGoogleMapsLoader.REGION               = null;
-      VirtualFenceGoogleMapsLoader.CHANNEL              = null;
-      VirtualFenceGoogleMapsLoader.CLIENT               = null;
+      VirtualFenceGoogleMaps.KEY                  = null;
+      VirtualFenceGoogleMaps.VERSION              = LastReleasedVersion;
+      VirtualFenceGoogleMaps.LIBRARIES            = [];
+      VirtualFenceGoogleMaps.LANGUAGE             = null;
+      VirtualFenceGoogleMaps.REGION               = null;
+      VirtualFenceGoogleMaps.CHANNEL              = null;
+      VirtualFenceGoogleMaps.CLIENT               = null;
 
       google      = null;
       isLoaded    = null;
@@ -93,7 +93,7 @@
       events      = [];
 
       if (typeof window.google !== 'undefined') delete window.google;
-      if (typeof window[VirtualFenceGoogleMapsLoader.WINDOW_CALLBACK_NAME] !== 'undefined') delete window[VirtualFenceGoogleMapsLoader.WINDOW_CALLBACK_NAME];
+      if (typeof window[VirtualFenceGoogleMaps.WINDOW_CALLBACK_NAME] !== 'undefined') delete window[VirtualFenceGoogleMaps.WINDOW_CALLBACK_NAME];
       if (script !== null)
       {
         script.parentElement.removeChild(script);
@@ -103,7 +103,7 @@
       if (callback) callback();
     };
 
-    if (isLoaded) VirtualFenceGoogleMapsLoader.load(() => { unload(); });
+    if (isLoaded) VirtualFenceGoogleMaps.load(() => { unload(); });
     else unload();
   };
 
@@ -127,5 +127,5 @@
     callbacks = [];
   };
 
-  return VirtualFenceGoogleMapsLoader;
+  return VirtualFenceGoogleMaps;
 });
