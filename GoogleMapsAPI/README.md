@@ -41,6 +41,7 @@ It is already in `window` object.**
   GoogleMaps.unload(callback_func(argv1, argv2, ...) {
     /* .... */
   });
+```
 
 ## Changelog list
 * 1.0.0
