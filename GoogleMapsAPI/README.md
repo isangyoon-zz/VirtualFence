@@ -23,24 +23,24 @@ It is already in `window` object.**
 
 ## Options
 ```javascript
-  VirtualFenceGoogleMaps.VERSION    = 'yourapikey';             // Version
-  VirtualFenceGoogleMaps.KEY        = '3.exp';                  // API Key
-  VirtualFenceGoogleMaps.LIBRARIES  = ['drawing', 'geometry'];  // Libraries
-  VirtualFenceGoogleMaps.LANGUAGE   = 'ko';                     // Localization
-  VirtualFenceGoogleMaps.REGION     = 'KR';                     // Region Code
-  VirtualFenceGoogleMaps.CHANNEL    = 'yourchannel';            // Channel
-  VirtualFenceGoogleMaps.CLIENT     = 'yourclientkey';          // Business Client key
+VirtualFenceGoogleMaps.VERSION    = 'yourapikey';             // Version
+VirtualFenceGoogleMaps.KEY        = '3.exp';                  // API Key
+VirtualFenceGoogleMaps.LIBRARIES  = ['drawing', 'geometry'];  // Libraries
+VirtualFenceGoogleMaps.LANGUAGE   = 'ko';                     // Localization
+VirtualFenceGoogleMaps.REGION     = 'KR';                     // Region Code
+VirtualFenceGoogleMaps.CHANNEL    = 'yourchannel';            // Channel
+VirtualFenceGoogleMaps.CLIENT     = 'yourclientkey';          // Business Client key
 ```
 
 ## Load and Unload API
 ```javascript
-  GoogleMaps.load(callback_func(argv1, argv2, ...) {
-    /* .... */
-  });
+GoogleMaps.load(callback_func(argv1, argv2, ...) {
+  /* .... */
+});
   
-  GoogleMaps.unload(callback_func(argv1, argv2, ...) {
-    /* .... */
-  });
+GoogleMaps.unload(callback_func(argv1, argv2, ...) {
+  /* .... */
+});
 ```
 
 ## Changelog list
