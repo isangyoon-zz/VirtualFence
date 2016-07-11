@@ -34,12 +34,12 @@ VirtualFenceGoogleMaps.CLIENT     = 'yourclientkey';          // Business Client
 
 ## Load and Unload API
 ```javascript
-GoogleMaps.load(callback_func(argv1, argv2, ...) {
-  /* .... */
+GoogleMaps.load((arg1, arg2, ...) => {
+  /* callback function */
 });
   
-GoogleMaps.unload(callback_func(argv1, argv2, ...) {
-  /* .... */
+GoogleMaps.unload((arg1, arg2, ...) => {
+  /* callback function */
 });
 ```
 
