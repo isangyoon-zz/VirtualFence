@@ -18,6 +18,7 @@ Some functions to help you manipulate and work with GeoJSON.
 * Convert distance to radians
 * Convert distance to degrees
 
+### Usages
 ```javascript
 VirtualFence.RadiansToDistance(radians, unit); // degrees, radians, meters(m), kilometers(km)
 VirtualFence.DistanceToRadians(distance, unit); // degrees, radians, meters(m), kilometers(km)
@@ -25,7 +26,29 @@ VirtualFence.DistanceToDegrees(distance, unit); // degrees, radians, meters(m), 
 ```
 
 ## Area
+Calculate the area of features. Takes a one or more features and returns their area.
 
+### Usages
+```javascript
+let polygon = {
+  "type"        : "Feature",
+  "geometry"    : {
+    "type"        : "Polygon",
+    "coordinates" : [
+      [
+        [],
+        [],
+        [],
+        [],
+        []
+      ]
+    ]
+  },
+  "properties"  : {}
+};
+  
+let area = VirtualFence.Area(polygon); // return area in square meters
+```
 
 ## Changelog list
 * 1.0.0
