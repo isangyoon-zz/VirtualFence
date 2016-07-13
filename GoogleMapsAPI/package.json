@@ -1,5 +1,5 @@
 {
-  "name"            : "VirtualFence-GoogleMapsAPI",
+  "name"            : "GoogleMapsAPI",
   "version"         : "1.0.0",
   "description"     : "Wrapper for asynchronously used Google Maps API for VirtualFence Client",
   "keywords"        : [
