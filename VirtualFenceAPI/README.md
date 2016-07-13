@@ -36,17 +36,16 @@ let polygon = {
     "type"        : "Polygon",
     "coordinates" : [
       [
-        [],
-        [],
-        [],
-        [],
-        []
+        [-1, -1],
+        [-1, 1],
+        [1, -1],
+        [1, 1]
       ]
     ]
   },
   "properties"  : {}
 };
-  
+
 let area = VirtualFence.Area(polygon); // return area in square meters
 ```
 
