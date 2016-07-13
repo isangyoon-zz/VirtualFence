@@ -1,13 +1,13 @@
 {
-  "name": "VirtualFence-Client",
-  "version": "0.0.0-unreleased",
-  "description": "VirtualFence Software Client Program",
-  "main": "main.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+  "name"          : "VirtualFence-Client",
+  "version"       : "0.0.0-unreleased",
+  "description"   : "VirtualFence Software Client Program",
+  "main"          : "main.js",
+  "scripts"       : {
+    "test"  : "echo \"Error: no test specified\" && exit 1",
     "start" : "electron ./main.js"
   },
-  "keywords": [
+  "keywords"      : [
     "VirtualFence",
     "GeoFence",
     "ICT",
@@ -15,8 +15,8 @@
     "IoT",
     "Smart Farm"
   ],
-  "author": "Sangyoon Lee",
-  "license": "MIT",
-  "dependencies": {
+  "author"        : "Sangyoon Lee",
+  "license"       : "MIT",
+  "dependencies"  : {
   }
 }
