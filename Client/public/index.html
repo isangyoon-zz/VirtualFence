@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width">
+
+  <title>VirtualFence</title>
+
+  <script>
+    window.$					  = window.jQuery = require('jquery');
+    window.Socket       = require('socket.io-client');
+    window.MongoDB      = require('mongodb');
+    window.GoogleMaps   = require('GoogleMapsAPI');
+    window.TableSort    = require('tablesort');
+
+    const DATABASE_URL  = 'mongodb://222.116.135.139/virtualfence';
+    const IO            = Socket('http://222.116.135.139:3000');
+  </script>
+
+  <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Roboto:300,400,500,700" type="text/css">
+  <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Material+Icons" type="text/css">
+  <link rel="stylesheet" href="http://fonts.googleapis.com/earlyaccess/jejugothic.css" type="text/css">
+
+  <link rel="stylesheet" href="../node_modules/material-design-lite/material.min.css" type="text/css">
+  <link rel="stylesheet" href="./css/index.css" type="text/css">
+
+  <script src="../node_modules/material-design-lite/material.min.js" defer></script>
+  <script src="./js/geojson.js"></script>
+  <script src="./js/virtualfence.js"></script>
+</head>
+<body>
+  <div class="mdl-grid mdl-grid--no-spacing">
+    <div class="mdl-cell mdl-cell--9-col">
+      <div id="map"></div>
+    </div>
+    <div class="mdl-cell mdl-cell--3-col quiet-scroll scroll-styled">
+
+        <table class="mdl-data-table mdl-shadow--2dp">
+          <thead>
+            <tr>
+              <th>Animal</th>
+              <th>Distance</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="log">
+    			</tbody>
+        </table>
+    </div>
+  </div>
+
+  <script>
+    var map = null,
+        fences = new Map(),
+        index = 0;
+
+    /* VirtualFence Google Maps API */
+    GoogleMaps.VERSION    = '3.exp';
+    GoogleMaps.LIBRARIES  = ['geometry', 'drawing'];
+    GoogleMaps.load((google) => {
+      map = new google.maps.Map(document.getElementById('map'), {
+        "center"  : new google.maps.LatLng(36.94929, 127.90739),
+        "zoom"    : 18
+      });
+
+      let drawingManager = new google.maps.drawing.DrawingManager({
+        "drawingMode"           : null,
+        "drawingControl"        : true,
+        "drawingControlOptions" : {
+          "position"      : google.maps.ControlPosition.TOP_RIGHT,
+          "drawingModes"  : [google.maps.drawing.OverlayType.POLYGON]
+        },
+        "polygonOptions"        : {
+          "strokeColor"   : "#ff0000",
+          "strokeOpacity" : 1,
+          "strokeWeight"  : 1,
+          "fillColor"     : "#ff0000",
+          "fillOpacity"   : 0.25,
+          "zIndex"        : 3
+        }
+      });
+      drawingManager.setMap(map);
+
+      google.maps.event.addListener(drawingManager, 'polygoncomplete', (polygon) => {
+        drawingManager.setDrawingMode(null);
+
+        let array = [];
+        polygon.getPath().forEach((latLng, i) => {
+          array.push([latLng.lng(), latLng.lat()]);
+        });
+        array.push(array[0]);
+
+        let geojson = {
+          "type"        : "Feature",
+          "geometry"    : {
+            "type"        : "Polygon",
+            "coordinates" : [array]
+          },
+          "properties"  : {}
+        };
+
+        let safetyZone  = VirtualFence.Offset(geojson, -10, 'm'),
+            warningZone = VirtualFence.Offset(geojson, -5, 'm'),
+            dangerZone  = geojson;
+
+        let safetyLayer = new GeoJSON(safetyZone, {
+          "strokeColor"   : '#66cd00',
+          "strokeOpacity" : 1,
+          "strokeWeight"  : 1,
+          "fillColor"     : '#66cd00',
+          "fillOpacity"   : 0.65,
+          "zIndex"        : 5,
+          "map"           : map
+          }),
+          warningLayer = new GeoJSON(warningZone, {
+            "strokeColor"   : '#ff4500',
+            "strokeOpacity" : 1,
+            "strokeWeight"  : 1,
+            "fillColor"     : '#ff4500',
+            "fillOpacity"   : 0.55,
+            "zIndex"        : 4,
+            "map"           : map
+          }),
+          dangerLayer = new GeoJSON(dangerZone, {
+            "strokeColor"   : '#ff0000',
+            "strokeOpacity" : 1,
+            "strokeWeight"  : 1,
+            "fillColor"     : '#ff0000',
+            "fillOpacity"   : 0.25,
+            "zIndex"        : 3,
+            "map"           : map
+          });
+
+        let fence = {
+          "polygon"     : {
+            "safe"    : safetyLayer,
+            "warn"    : warningLayer,
+            "danger"  : dangerLayer
+          },
+           "geojson"    : {
+            "safe"    : safetyZone,
+            "warn"    : warningZone,
+            "danger"  : dangerZone
+          },
+          "animals"     : new Map()
+        };
+        fences.set('fence' + (index++), fence);
+
+        google.maps.event.addListener(safetyLayer, 'rightclick', () => {
+          console.log('polygon - safe');
+        });
+
+        google.maps.event.addListener(warningLayer, 'rightclick', () => {
+          console.log('polygon - warn');
+        });
+
+        google.maps.event.addListener(dangerLayer, 'rightclick', () => {
+          console.log('polygon - danger');
+        });
+      });
+
+      // Fetch (Virtual)Fence Data
+      google.maps.event.addListenerOnce(map, 'idle', () => {
+        function findFence(database, callback)
+        {
+          let cursor = database.collection('fence').find();
+
+          cursor.each((error, document) => {
+            if(document !== null)
+            {
+              let uid = MongoDB.ObjectID(document._id).toString(),
+                  safety  = document.safe,
+                  warning = document.warn,
+                  danger  = document.danger;
+
+              let safetyLayer = new GeoJSON(safety, {
+                "strokeColor"   : '#66cd00',
+                "strokeOpacity" : 1,
+                "strokeWeight"  : 1,
+                "fillColor"     : '#66cd00',
+                "fillOpacity"   : 0.55,
+                "zIndex"        : 5,
+                "map"           : map
+              }),
+              warningLayer = new GeoJSON(warning, {
+                "strokeColor"   : '#ff4500',
+                "strokeOpacity" : 1,
+                "strokeWeight"  : 1,
+                "fillColor"     : '#ff4500',
+                "fillOpacity"   : 0.45,
+                "zIndex"        : 4,
+                "map"           : map
+              }),
+              dangerLayer = new GeoJSON(danger, {
+                "strokeColor"   : '#ff0000',
+                "strokeOpacity" : 1,
+                "strokeWeight"  : 1,
+                "fillColor"     : '#ff0000',
+                "fillOpacity"   : 0.35,
+                "zIndex"        : 3,
+                "map"           : map
+              });
+
+              let fence = {
+                "reference": uid,
+                "polygon": {
+                  "safe": safetyLayer,
+                  "warn": warningLayer,
+                  "danger": dangerLayer
+                },
+                "geojson": {
+                  "safe": safety,
+                  "warn": warning,
+                  "danger": danger
+                },
+                "animals": new Map()
+              };
+
+              fences.set('fence' + (index++), fence);
+
+              google.maps.event.addListener(safetyLayer, 'rightclick', () => {
+                console.log('polygon - safe');
+              });
+
+              google.maps.event.addListener(warningLayer, 'rightclick', () => {
+                console.log('polygon - warn');
+              });
+
+              google.maps.event.addListener(dangerLayer, 'rightclick', () => {
+                console.log('polygon - danger');
+              });
+            }
+            else
+            {
+              callback();
+            }
+          });
+        }
+
+        MongoDB.MongoClient.connect(DATABASE_URL, (error, database) => {
+          findFence(database, () => { database.close(); });
+        });
+      });
+
+      google.maps.event.addListener(map, 'click', (e) => {
+        // console.log(VirtualFence);
+      });
+
+      // Convert Polygon to PolyK's DataStructure
+      google.maps.Polygon.prototype.Edges = () => {
+        let e = [];
+        this.getPath().forEach((t , n) => { e.push(t); });
+        return e.map((t, n) => { return n ? [e[n - 1], t] : [e[e.length - 1], t]; });
+      };
+
+      // Convert Polygon to Array
+      google.maps.Polygon.prototype.ToArray = () => {
+        var e = [];
+        this.getPath().forEach((t, n) => { let r = t.toPoint(); e.push(r.x); e.push(r.y);	});
+        return e;
+      };
+
+      // Find Closest Edge
+      google.maps.Polygon.prototype.ClosestPoint = (e) => {
+        var t = this.toArray(),
+        n = e.getPosition().toPoint(),
+        r = PolyK.ClosestEdge(t, n.x, n.y),
+        i = new google.maps.Point(r.point.x, r.point.y);
+
+        return i;
+      };
+
+      // Convert Google Map LatLng to Point(Pixel)
+      google.maps.LatLng.prototype.ToPoint = function() {
+      	var e = map.getProjection().fromLatLngToPoint(this);
+      	var t = Math.pow(2, map.getZoom());
+      	var n = new google.maps.Point(e.x * t, e.y * t);
+      	return n;
+      };
+
+      // Convert Point(Pixel) to Google Map LatLng
+      google.maps.Point.prototype.ToLatLng = () => {
+        var e = Math.pow(2, map.getZoom());
+        var t = new google.maps.Point(this.x / e, this.y / e);
+        var n = map.getProjection().fromPointToLatLng(t);
+        return n;
+      };
+    });
+  </script>
+
+  <script>
+    $(() => {
+      IO.on('connect', () => {
+        IO.on('animal data', (packet) => {
+          let data = JSON.parse(packet);
+
+          let uuid      = String(data.uuid),
+              key       = 'fence' + data.fence,
+              latitude  = Number(data.lat),
+              longitude = Number(data.lng),
+              altitude  = Number(data.alt),
+              speed     = Number(data.speed);
+
+          if (fences.has(key))
+          {
+            let fence   = fences.get(key),
+                layers  = fence.geojson,
+                polygon = fence.polygon,
+                animals = fence.animals;
+
+            if (!animals.has(uuid))
+            {
+              animals.set(uuid, {
+                "marker"    : new google.maps.Marker({
+                  "position"  : {
+                      "lat" : latitude,
+                      "lng" : longitude
+                    },
+                  "map"   : map
+                }),
+                "geojson": {
+                  "type" : "Feature",
+                  "geometry" : {
+                    "type" : "Point",
+                    "coordinates" : [longitude, latitude]
+                  },
+                  "properties": {}
+                }
+              });
+            }
+            else
+            {
+              let animal = animals.get(uuid),
+                  marker = animal.marker,
+                  geojson = animal.geojson;
+
+              let isSafety = VirtualFence.Inside(geojson, layers.safe),
+                  isWarning = VirtualFence.Inside(geojson, layers.warn),
+                  isDanger = VirtualFence.Inside(geojson, layers.danger);
+
+              let status = 'Safety',
+                  log_status = '<span class="text-success">안전</span>';
+
+              if(isSafety)
+              {
+                status = 'Safety';
+                log_status = '<span class="text-success">안전</span>';
+              }
+              else if(isWarning)
+              {
+                status = 'Warning';
+                log_status = '<span class="text-warning">경고</span>';
+              }
+              else if(isDanger)
+              {
+                status = 'Danger';
+                log_status = '<span class="text-danger">위험</span>';
+              }
+              else
+              {
+                status = 'Leave';
+                log_status = '<span class="text-danger"><b>이탈</b></span>';
+              }
+
+              marker.setPosition({
+                "lat": latitude,
+                "lng": longitude
+              });
+              marker.setTitle(String(uuid));
+              marker.setOpacity((status === 'Leave') ? 0.35 : 1);
+              geojson.geometry.coordinates = [longitude, latitude];
+
+              /*
+              IO.emit('animal alert', {
+                "uuid"    : uuid,
+                "status"  : status
+              });
+              */
+
+              /*
+              let log_index = uuid,
+                  log_check = $.find('#' + log_index).length == 0 ? false : true;
+
+              if(log_check == true)
+              {
+                $('#' + log_index).html('<td class="text-center">' + uuid + '</td><td class="text-center">' + '0' + '</td><td class="text-center">' + log_status + '</td>');
+              }
+              else
+              {
+                $('#log').append('<tr id="' + log_index + '"><td class="text-center">' + uuid + '</td><td class="text-center">' + '0' + '</td><td class="text-center">' + log_status + '</td></tr>');
+              }
+              */
+            }
+          }
+        });
+      });
+    });
+  </script>
+</body>
+</html>
