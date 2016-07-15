@@ -23,8 +23,8 @@ It is already in `window` object.**
 
 ## Options
 ```javascript
-VirtualFenceGoogleMaps.VERSION    = 'yourapikey';             // Version
-VirtualFenceGoogleMaps.KEY        = '3.exp';                  // API Key
+VirtualFenceGoogleMaps.VERSION    = '3.exp';                  // Version
+VirtualFenceGoogleMaps.KEY        = 'yourapikey';             // API Key
 VirtualFenceGoogleMaps.LIBRARIES  = ['drawing', 'geometry'];  // Libraries
 VirtualFenceGoogleMaps.LANGUAGE   = 'ko';                     // Localization
 VirtualFenceGoogleMaps.REGION     = 'KR';                     // Region Code
