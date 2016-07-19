@@ -34,18 +34,17 @@
       <div id="map"></div>
     </div>
     <div class="mdl-cell mdl-cell--3-col quiet-scroll scroll-styled">
-
-        <table class="mdl-data-table mdl-shadow--2dp">
-          <thead>
-            <tr>
-              <th>Animal</th>
-              <th>Distance</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody id="log">
-    			</tbody>
-        </table>
+      <table class="mdl-data-table mdl-js-data-table mdl-shadow--2dp">
+        <thead>
+          <tr>
+            <th>Animal</th>
+            <th>Distance</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="log">
+  			</tbody>
+      </table>
     </div>
   </div>
 
@@ -84,24 +83,9 @@
       google.maps.event.addListener(drawingManager, 'polygoncomplete', (polygon) => {
         drawingManager.setDrawingMode(null);
 
-        let array = [];
-        polygon.getPath().forEach((latLng, i) => {
-          array.push([latLng.lng(), latLng.lat()]);
-        });
-        array.push(array[0]);
-
-        let geojson = {
-          "type"        : "Feature",
-          "geometry"    : {
-            "type"        : "Polygon",
-            "coordinates" : [array]
-          },
-          "properties"  : {}
-        };
-
         let safetyZone  = VirtualFence.Offset(geojson, -10, 'm'),
             warningZone = VirtualFence.Offset(geojson, -5, 'm'),
-            dangerZone  = geojson;
+            dangerZone  = toGeoJSON(polygon);
 
         let safetyLayer = new GeoJSON(safetyZone, {
           "strokeColor"   : '#66cd00',
@@ -120,24 +104,15 @@
             "fillOpacity"   : 0.55,
             "zIndex"        : 4,
             "map"           : map
-          }),
-          dangerLayer = new GeoJSON(dangerZone, {
-            "strokeColor"   : '#ff0000',
-            "strokeOpacity" : 1,
-            "strokeWeight"  : 1,
-            "fillColor"     : '#ff0000',
-            "fillOpacity"   : 0.25,
-            "zIndex"        : 3,
-            "map"           : map
           });
 
         let fence = {
           "polygon"     : {
             "safe"    : safetyLayer,
             "warn"    : warningLayer,
-            "danger"  : dangerLayer
+            "danger"  : polygon
           },
-           "geojson"    : {
+           "geojson"   : {
             "safe"    : safetyZone,
             "warn"    : warningZone,
             "danger"  : dangerZone
@@ -146,20 +121,83 @@
         };
         fences.set('fence' + (index++), fence);
 
-        google.maps.event.addListener(safetyLayer, 'rightclick', () => {
-          console.log('polygon - safe');
+        // Double Click -> Fence Removal
+        google.maps.event.addListener(polygon, 'dblclick', () => {
+          let id = null;
+          fences.forEach((value, key) => {
+            if (value.polygon.danger === polygon)
+            {
+              id = key;
+            }
+          });
+
+          let layer = fences.get(id).polygon;
+          layer.safe.setMap(null);
+          layer.warn.setMap(null);
+          layer.danger.setMap(null);
+          polygon.setMap(null);
+
+          fences.delete(id);
         });
 
-        google.maps.event.addListener(warningLayer, 'rightclick', () => {
-          console.log('polygon - warn');
-        });
+        // Right Click -> Fence Modification
+        google.maps.event.addListener(polygon, 'rightclick', () => {
+          let id = null;
+          fences.forEach((value, key) => {
+            if (value.polygon.danger === polygon)
+            {
+              id = key;
+            }
+          });
 
-        google.maps.event.addListener(dangerLayer, 'rightclick', () => {
-          console.log('polygon - danger');
+          polygon.setEditable(true);
+
+          let layer = fences.get(id).polygon;
+          layer.safe.setMap(null);
+          layer.warn.setMap(null);
+
+          google.maps.event.addListener(polygon, 'click', () => {
+            polygon.setEditable(false);
+
+            let safetyZone  = VirtualFence.Offset(geojson, -10, 'm'),
+                warningZone = VirtualFence.Offset(geojson, -5, 'm'),
+                dangerZone  = toGeoJSON(polygon);
+
+            let safetyLayer = new GeoJSON(safetyZone, {
+              "strokeColor"   : '#66cd00',
+              "strokeOpacity" : 1,
+              "strokeWeight"  : 1,
+              "fillColor"     : '#66cd00',
+              "fillOpacity"   : 0.65,
+              "zIndex"        : 5,
+              "map"           : map
+            }),
+              warningLayer = new GeoJSON(warningZone, {
+                "strokeColor"   : '#ff4500',
+                "strokeOpacity" : 1,
+                "strokeWeight"  : 1,
+                "fillColor"     : '#ff4500',
+                "fillOpacity"   : 0.55,
+                "zIndex"        : 4,
+                "map"           : map
+            });
+
+            fences.get(id).polygon = {
+              "safe"    : safetyLayer,
+              "warn"    : warningLayer,
+              "danger"  : polygon
+            };
+
+            fences.get(id).geojson = {
+              "safe"    : safetyZone,
+              "warn"    : warningZone,
+              "danger"  : dangerZone
+            };
+          });
         });
       });
 
-      // Fetch (Virtual)Fence Data
+      // Fetch Fence Data (Only Once)
       google.maps.event.addListenerOnce(map, 'idle', () => {
         function findFence(database, callback)
         {
@@ -218,16 +256,79 @@
 
               fences.set('fence' + (index++), fence);
 
-              google.maps.event.addListener(safetyLayer, 'rightclick', () => {
-                console.log('polygon - safe');
+              // Double Click -> Fence Removal
+              google.maps.event.addListener(polygon, 'dblclick', () => {
+                let id = null;
+                fences.forEach((value, key) => {
+                  if (value.polygon.danger === polygon)
+                  {
+                    id = key;
+                  }
+                });
+
+                let layer = fences.get(id).polygon;
+                layer.safe.setMap(null);
+                layer.warn.setMap(null);
+                layer.danger.setMap(null);
+                polygon.setMap(null);
+
+                fences.delete(id);
               });
 
-              google.maps.event.addListener(warningLayer, 'rightclick', () => {
-                console.log('polygon - warn');
-              });
+              // Right Click -> Fence Modification
+              google.maps.event.addListener(polygon, 'rightclick', () => {
+                let id = null;
+                fences.forEach((value, key) => {
+                  if (value.polygon.danger === polygon)
+                  {
+                    id = key;
+                  }
+                });
 
-              google.maps.event.addListener(dangerLayer, 'rightclick', () => {
-                console.log('polygon - danger');
+                polygon.setEditable(true);
+
+                let layer = fences.get(id).polygon;
+                layer.safe.setMap(null);
+                layer.warn.setMap(null);
+
+                google.maps.event.addListener(polygon, 'click', () => {
+                  polygon.setEditable(false);
+
+                  let safetyZone  = VirtualFence.Offset(geojson, -10, 'm'),
+                      warningZone = VirtualFence.Offset(geojson, -5, 'm'),
+                      dangerZone  = toGeoJSON(polygon);
+
+                  let safetyLayer = new GeoJSON(safetyZone, {
+                    "strokeColor"   : '#66cd00',
+                    "strokeOpacity" : 1,
+                    "strokeWeight"  : 1,
+                    "fillColor"     : '#66cd00',
+                    "fillOpacity"   : 0.65,
+                    "zIndex"        : 5,
+                    "map"           : map
+                  }),
+                    warningLayer = new GeoJSON(warningZone, {
+                      "strokeColor"   : '#ff4500',
+                      "strokeOpacity" : 1,
+                      "strokeWeight"  : 1,
+                      "fillColor"     : '#ff4500',
+                      "fillOpacity"   : 0.55,
+                      "zIndex"        : 4,
+                      "map"           : map
+                  });
+
+                  fences.get(id).polygon = {
+                    "safe"    : safetyLayer,
+                    "warn"    : warningLayer,
+                    "danger"  : polygon
+                  };
+
+                  fences.get(id).geojson = {
+                    "safe"    : safetyZone,
+                    "warn"    : warningZone,
+                    "danger"  : dangerZone
+                  };
+                });
               });
             }
             else
@@ -242,49 +343,79 @@
         });
       });
 
-      google.maps.event.addListener(map, 'click', (e) => {
-        // console.log(VirtualFence);
-      });
+      // Convert google.maps.Polygon to GeoJSON
+      function toGeoJSON(polygon)
+      {
+        let array = [];
+        polygon.getPath().forEach((latLng, i) => {
+          array.push([latLng.lng(), latLng.lat()]);
+        });
+        array.push(array[0]);
 
-      // Convert Polygon to PolyK's DataStructure
-      google.maps.Polygon.prototype.Edges = () => {
-        let e = [];
-        this.getPath().forEach((t , n) => { e.push(t); });
-        return e.map((t, n) => { return n ? [e[n - 1], t] : [e[e.length - 1], t]; });
-      };
+        let geojson = {
+          "type"        : "Feature",
+          "geometry"    : {
+            "type"        : "Polygon",
+            "coordinates" : [array]
+          },
+          "properties"  : {}
+        };
 
-      // Convert Polygon to Array
-      google.maps.Polygon.prototype.ToArray = () => {
-        var e = [];
-        this.getPath().forEach((t, n) => { let r = t.toPoint(); e.push(r.x); e.push(r.y);	});
-        return e;
-      };
+        return geojson;
+      }
 
-      // Find Closest Edge
-      google.maps.Polygon.prototype.ClosestPoint = (e) => {
-        var t = this.toArray(),
-        n = e.getPosition().toPoint(),
-        r = PolyK.ClosestEdge(t, n.x, n.y),
-        i = new google.maps.Point(r.point.x, r.point.y);
+      // Convert Polygon to PolyK DataStructure
+      function getEdges(polygon)
+      {
+        let edges = [];
 
-        return i;
-      };
+        polygon.getPath().forEach((path, key) => {
+          edges.push(path);
+        });
 
-      // Convert Google Map LatLng to Point(Pixel)
-      google.maps.LatLng.prototype.ToPoint = function() {
-      	var e = map.getProjection().fromLatLngToPoint(this);
-      	var t = Math.pow(2, map.getZoom());
-      	var n = new google.maps.Point(e.x * t, e.y * t);
-      	return n;
-      };
+        return edges.map((edge, key) => {
+          return key ? [edges[key - 1], edge] : [edges[edges.length - 1], edge];
+        });
+      }
 
-      // Convert Point(Pixel) to Google Map LatLng
-      google.maps.Point.prototype.ToLatLng = () => {
-        var e = Math.pow(2, map.getZoom());
-        var t = new google.maps.Point(this.x / e, this.y / e);
-        var n = map.getProjection().fromPointToLatLng(t);
-        return n;
-      };
+      // Convert google.maps.Polygon to GeoJSON
+      function toArray(polygon)
+      {
+        let array = [];
+
+        polygon.getPath().forEach((path, i) => {
+          let point = toPoint(path);
+
+          array.push(point.x);
+          array.push(point.y);
+        });
+
+        return array;
+      }
+
+      function ClosestLine(point, polygon)
+      {
+        let lines = toArray(polygon);
+        let p = toPoint(point);
+
+        return PolyK.ClosestEdge(lines, p.x, p.y);
+      }
+
+      function toPoint(latLng)
+      {
+        var latlng = map.getProjection().fromLatLngToPoint(this);
+      	var zoom = Math.pow(2, map.getZoom());
+
+      	return new google.maps.Point(latlng.x * zoom, latlng.y * zoom);
+      }
+
+      function toLatLng(point)
+      {
+        var zoom = Math.pow(2, map.getZoom());
+        var p = new google.maps.Point(point.x / zoom, point.y / zoom);
+
+        return map.getProjection().fromPointToLatLng(p);
+      }
     });
   </script>
 
@@ -360,7 +491,12 @@
               {
                 status = 'Leave';
                 log_status = '<span class="text-danger"><b>이탈</b></span>';
-              }
+              }             
+
+              //ClosestLine();
+
+              let distance = [];
+              //distance[0] =
 
               marker.setPosition({
                 "lat": latitude,
