@@ -212,6 +212,25 @@
             };
 
           });
+
+
+
+        });
+
+        function insertFence(database, callback)
+        {
+          database.collection('fence').insertOne({
+            "safety"  : safetyZone,
+            "warning" : warningZone,
+            "danger"  : dangerZone,
+            "date"    : new Date()
+          }, (error, result) => {
+            callback();
+          });
+        }
+
+        MongoDB.MongoClient.connect(DATABASE_URL, (error, database) => {
+          insertFence(database, () => { database.close(); });
         });
       });
 
@@ -224,9 +243,9 @@
           cursor.each((error, document) => {
             if(document !== null)
             {
-              let uid = MongoDB.ObjectID(document._id).toString(),
-                  safety  = document.safe,
-                  warning = document.warn,
+              let uid = MongoDB.ObjectID(document._id),
+                  safety  = document.safety,
+                  warning = document.warning,
                   danger  = document.danger;
 
               let safetyLayer = new GeoJSON(safety, {
@@ -258,21 +277,32 @@
               });
 
               let fence = {
-                "reference": uid,
-                "polygon": {
-                  "safe": safetyLayer,
-                  "warn": warningLayer,
-                  "danger": dangerLayer
+                "reference" : uid,
+                "polygon"   : {
+                  "safety"    : safetyLayer,
+                  "warning"   : warningLayer,
+                  "danger"    : dangerLayer
                 },
-                "geojson": {
-                  "safe": safety,
-                  "warn": warning,
-                  "danger": danger
+                "geojson"   : {
+                  "safety"    : safety,
+                  "warning"   : warning,
+                  "danger"    : danger
                 },
-                "animals": new Map()
+                "animals"   : new Map()
               };
-
               fences.set('fence' + (index++), fence);
+
+              let polygon = fence.polygon.danger;
+
+              google.maps.event.addListener(polygon, 'click', () => {
+                let id = null;
+                fences.forEach((value, key) => {
+                  if (value.polygon.danger === polygon)
+                  {
+                    id = key;
+                  }
+                });
+              });
 
               // Double Click -> Fence Removal
               google.maps.event.addListener(polygon, 'dblclick', () => {
@@ -284,13 +314,29 @@
                   }
                 });
 
+                function removeFence(database, callback)
+                {
+                  console.log(fences.get(id));
+
+                  database.collection('fence').findOneAndDelete({
+                    "_id" : fences.get(id).reference
+                  }, (error, result) => {
+                    callback();
+                  });
+                }
+
+                MongoDB.MongoClient.connect(DATABASE_URL, (error, database) => {
+                  removeFence(database, () => { database.close(); });
+                });
+
                 let layer = fences.get(id).polygon;
-                layer.safe.setMap(null);
-                layer.warn.setMap(null);
+                layer.safety.setMap(null);
+                layer.warning.setMap(null);
                 layer.danger.setMap(null);
+
                 polygon.setMap(null);
 
-                fences.delete(id);
+                //fences.delete(id);
               });
 
               // Right Click -> Fence Modification
@@ -306,15 +352,17 @@
                 polygon.setEditable(true);
 
                 let layer = fences.get(id).polygon;
-                layer.safe.setMap(null);
-                layer.warn.setMap(null);
+                layer.safety.setMap(null);
+                layer.warning.setMap(null);
 
-                google.maps.event.addListener(polygon, 'click', () => {
+                google.maps.event.addListenerOnce(polygon, 'click', () => {
                   polygon.setEditable(false);
+
+                  let geojson = toGeoJSON(polygon);
 
                   let safetyZone  = VirtualFence.Offset(geojson, -10, 'm'),
                       warningZone = VirtualFence.Offset(geojson, -5, 'm'),
-                      dangerZone  = toGeoJSON(polygon);
+                      dangerZone  = geojson;
 
                   let safetyLayer = new GeoJSON(safetyZone, {
                     "strokeColor"   : '#66cd00',
@@ -336,18 +384,36 @@
                   });
 
                   fences.get(id).polygon = {
-                    "safe"    : safetyLayer,
-                    "warn"    : warningLayer,
-                    "danger"  : polygon
+                    "safety"    : safetyLayer,
+                    "warning"   : warningLayer,
+                    "danger"    : polygon
                   };
 
                   fences.get(id).geojson = {
-                    "safe"    : safetyZone,
-                    "warn"    : warningZone,
-                    "danger"  : dangerZone
+                    "safety"    : safetyZone,
+                    "warning"   : warningZone,
+                    "danger"    : dangerZone
                   };
+
+                  function updateFence(database, callback)
+                  {
+                    database.collection('fence').findOneAndUpdate({
+                      "_id" : fences.get(id).reference
+                    },
+                    {
+                      "safety"    : safetyZone,
+                      "warning"   : warningZone,
+                      "danger"    : dangerZone
+                    });
+                  }
+
+                  MongoDB.MongoClient.connect(DATABASE_URL, (error, database) => {
+                    updateFence(database, () => { database.close(); });
+                  });
+
                 });
               });
+
             }
             else
             {
@@ -436,7 +502,6 @@
       }
     });
   </script>
-
   <script>
     $(() => {
       IO.on('connect', () => {
