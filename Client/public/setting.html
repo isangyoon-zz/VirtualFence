@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width">
+
+  <title>VirtualFence Setting</title>
+
+  <script>
+    window.$ = window.jQuery = require('jquery');
+
+    const {ipcRenderer} = require('electron');
+    const  ElectronSettings  = require('electron-settings');
+
+    var preference    = new ElectronSettings({
+      "configDirPath"   : __dirname + '/../',
+      "configFileName"  : 'setting'
+    });
+
+    const warning_zone_space  = preference.get('warning_zone_space');
+    const danger_zone_space   = preference.get('danger_zone_space');
+    const safety_zone_volume  = preference.get('safety_zone_volume');
+    const warning_zone_volume = preference.get('warning_zone_volume');
+    const danger_zone_volume  = preference.get('danger_zone_volume');
+    const escape_zone_volume  = preference.get('escape_zone_volume');
+    const flag  = preference.get('flag');
+  </script>
+
+  <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Roboto:300,400,500,700" type="text/css">
+  <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Material+Icons" type="text/css">
+  <link rel="stylesheet" href="http://fonts.googleapis.com/earlyaccess/jejugothic.css" type="text/css">
+
+  <link rel="stylesheet" href="../node_modules/material-design-lite/material.min.css" type="text/css">
+
+  <script src="../node_modules/material-design-lite/material.min.js" defer></script>
+
+  <style>
+    .button {text-align: center;}
+    .mdl-button {width: 49%;}
+  </style>
+</head>
+<body>
+  <div class="mdl-grid">
+    <div class="mdl-cell mdl-cell--4-col">
+      <div class="space_setting_card mdl-card mdl-shadow--2dp">
+        <div class="mdl-card__title">
+          <h2 class="mdl-card__title-text">Spacing Setting</h2>
+        </div>
+        <div class="mdl-card__supporting-text">
+          Setting space of each zone.
+        </div>
+        <div class="mdl-card__actions mdl-card--border">
+          <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
+            <input class="mdl-textfield__input" type="text" pattern="-?[0-9]*(\.[0-9]+)?" id="warning_zone_space">
+            <label class="mdl-textfield__label" for="warning_zone_space">Warning Zone Space</label>
+            <span class="mdl-textfield__error">It is not a number.</span>
+          </div>
+          <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
+            <input class="mdl-textfield__input" type="text" pattern="-?[0-9]*(\.[0-9]+)?" id="danger_zone_space">
+            <label class="mdl-textfield__label" for="danger_zone_space">Danger Zone Space</label>
+            <span class="mdl-textfield__error">It is not a number.</span>
+          </div>
+        </div>
+        <div class="mdl-card__menu">
+          <i class="material-icons">linear_scale</i>
+        </div>
+      </div>
+    </div>
+    <div class="mdl-cell mdl-cell--4-col">
+      <div class="volume_setting_card mdl-card mdl-shadow--2dp">
+        <div class="mdl-card__title">
+          <h2 class="mdl-card__title-text">Volume Setting</h2>
+        </div>
+        <div class="mdl-card__supporting-text">
+          Setting volume of each zone. It works only 'static volume' mode.
+        </div>
+        <div class="mdl-card__actions mdl-card--border">
+          <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
+            <input class="mdl-textfield__input" type="text" pattern="-?[0-9]*(\.[0-9]+)?" id="safety_zone_volume">
+            <label class="mdl-textfield__label" for="safety_zone_volume2">Safety Zone Volume</label>
+            <span class="mdl-textfield__error">It is not a number.</span>
+          </div>
+          <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
+            <input class="mdl-textfield__input" type="text" pattern="-?[0-9]*(\.[0-9]+)?" id="warning_zone_volume">
+            <label class="mdl-textfield__label" for="warning_zone_volume">Warning Zone Volume</label>
+            <span class="mdl-textfield__error">It is not a number.</span>
+          </div>
+          <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
+            <input class="mdl-textfield__input" type="text" pattern="-?[0-9]*(\.[0-9]+)?" id="danger_zone_volume">
+            <label class="mdl-textfield__label" for="danger_zone_volume">Danger Zone Volume</label>
+            <span class="mdl-textfield__error">It is not a number.</span>
+          </div>
+          <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
+            <input class="mdl-textfield__input" type="text" pattern="-?[0-9]*(\.[0-9]+)?" id="escape_zone_volume">
+            <label class="mdl-textfield__label" for="escape_zone_volume">Escape Zone Volume</label>
+            <span class="mdl-textfield__error">It is not a number.</span>
+          </div>
+        </div>
+        <div class="mdl-card__menu">
+          <i class="material-icons">hearing</i>
+        </div>
+      </div>
+    </div>
+    <div class="mdl-cell mdl-cell--4-col">
+      <div class="volume_setting_card mdl-card mdl-shadow--2dp">
+        <div class="mdl-card__title">
+          <h2 class="mdl-card__title-text">Miscellaneous</h2>
+        </div>
+        <div class="mdl-card__supporting-text">
+          Setting miscellaneous options.
+          <ul>
+            <li>Static volume mode is the value of volume is fixed.</li>
+            <li>Dynamic volume mode is the figure of volume varies as distance.</li>
+            <li>Dynamic sound mode is the strength of sound varies as the zone.</li>
+          </ul>
+        </div>
+        <div class="mdl-card__actions mdl-card--border">
+          <div>
+            <label class="mdl-radio mdl-js-radio mdl-js-ripple-effect" for="flag-0">
+              <input type="radio" id="flag-0" class="mdl-radio__button" name="flag" value="0">
+              <span class="mdl-radio__label">Static Volume</span>
+            </label>
+          </div>
+          <div>
+            <label class="mdl-radio mdl-js-radio mdl-js-ripple-effect" for="flag-1">
+              <input type="radio" id="flag-1" class="mdl-radio__button" name="flag" value="1">
+              <span class="mdl-radio__label">Dynamic Volume</span>
+            </label>
+          </div>
+          <div>
+            <label class="mdl-radio mdl-js-radio mdl-js-ripple-effect" for="flag-2">
+              <input type="radio" id="flag-2" class="mdl-radio__button" name="flag" value="2">
+              <span class="mdl-radio__label">Dynamic Sound</span>
+            </label>
+          </div>
+        </div>
+        <div class="mdl-card__menu">
+          <i class="material-icons">router</i>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="mdl-grid">
+    <div class="button mdl-cell mdl-cell--12-col">
+      <button class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored" id="button_apply">
+        Apply
+      </button>
+      <button class="mdl-button mdl-js-button mdl-button--raised mdl-button--accent" id="button_close">
+        Close
+      </button>
+    </div>
+  </div>
+  <script>
+  $('#warning_zone_space').val(warning_zone_space);
+  $('#danger_zone_space').val(danger_zone_space);
+  $('#safety_zone_volume').val(safety_zone_volume);
+  $('#warning_zone_volume').val(warning_zone_volume);
+  $('#danger_zone_volume').val(danger_zone_volume);
+  $('#escape_zone_volume').val(escape_zone_volume);
+  $('#flag-' + flag).prop('checked', true);
+
+  $('#button_apply').click(() => {
+    let warning_zone_spacing = $('#warning_zone_space').val();
+    let danger_zone_spacing = $('#danger_zone_space').val();
+    let safety_zone_volume_size = $('#safety_zone_volume').val();
+    let warning_zone_volume_size = $('#warning_zone_volume').val();
+    let danger_zone_volume_size =  $('#danger_zone_volume').val();
+    let escape_zone_volume_size =  $('#escape_zone_volume').val();
+    let flag_mode = $(':radio[name="flag"]:checked').val();
+
+    ipcRenderer.send('setting_apply', warning_zone_spacing, danger_zone_spacing, safety_zone_volume_size, warning_zone_volume_size, danger_zone_volume_size, escape_zone_volume_size, flag_mode);
+    window.close();
+  });
+
+  $('#button_close').click(() => {
+    window.close();
+  });
+  </script>
+</body>
+</html>

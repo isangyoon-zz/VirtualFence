@@ -83,9 +83,11 @@
       google.maps.event.addListener(drawingManager, 'polygoncomplete', (polygon) => {
         drawingManager.setDrawingMode(null);
 
+        let geojson = toGeoJSON(polygon);
+
         let safetyZone  = VirtualFence.Offset(geojson, -10, 'm'),
             warningZone = VirtualFence.Offset(geojson, -5, 'm'),
-            dangerZone  = toGeoJSON(polygon);
+            dangerZone  = geojson;
 
         let safetyLayer = new GeoJSON(safetyZone, {
           "strokeColor"   : '#66cd00',
@@ -108,18 +110,30 @@
 
         let fence = {
           "polygon"     : {
-            "safe"    : safetyLayer,
-            "warn"    : warningLayer,
-            "danger"  : polygon
+            "safety"      : safetyLayer,
+            "warning"     : warningLayer,
+            "danger"      : polygon
           },
-           "geojson"   : {
-            "safe"    : safetyZone,
-            "warn"    : warningZone,
-            "danger"  : dangerZone
+           "geojson"    : {
+            "safety"      : safetyZone,
+            "warning"     : warningZone,
+            "danger"      : dangerZone
           },
           "animals"     : new Map()
         };
         fences.set('fence' + (index++), fence);
+
+        google.maps.event.addListener(polygon, 'click', () => {
+          let id = null;
+          fences.forEach((value, key) => {
+            if (value.polygon.danger === polygon)
+            {
+              id = key;
+            }
+          });
+
+          console.log(fences.get(id));
+        });
 
         // Double Click -> Fence Removal
         google.maps.event.addListener(polygon, 'dblclick', () => {
@@ -132,9 +146,10 @@
           });
 
           let layer = fences.get(id).polygon;
-          layer.safe.setMap(null);
-          layer.warn.setMap(null);
+          layer.safety.setMap(null);
+          layer.warning.setMap(null);
           layer.danger.setMap(null);
+
           polygon.setMap(null);
 
           fences.delete(id);
@@ -153,15 +168,17 @@
           polygon.setEditable(true);
 
           let layer = fences.get(id).polygon;
-          layer.safe.setMap(null);
-          layer.warn.setMap(null);
+          layer.safety.setMap(null);
+          layer.warning.setMap(null);
 
-          google.maps.event.addListener(polygon, 'click', () => {
+          google.maps.event.addListenerOnce(polygon, 'click', () => {
             polygon.setEditable(false);
+
+            let geojson = toGeoJSON(polygon);
 
             let safetyZone  = VirtualFence.Offset(geojson, -10, 'm'),
                 warningZone = VirtualFence.Offset(geojson, -5, 'm'),
-                dangerZone  = toGeoJSON(polygon);
+                dangerZone  = geojson;
 
             let safetyLayer = new GeoJSON(safetyZone, {
               "strokeColor"   : '#66cd00',
@@ -183,16 +200,17 @@
             });
 
             fences.get(id).polygon = {
-              "safe"    : safetyLayer,
-              "warn"    : warningLayer,
-              "danger"  : polygon
+              "safety"    : safetyLayer,
+              "warning"   : warningLayer,
+              "danger"    : polygon
             };
 
             fences.get(id).geojson = {
-              "safe"    : safetyZone,
-              "warn"    : warningZone,
-              "danger"  : dangerZone
+              "safety"    : safetyZone,
+              "warning"   : warningZone,
+              "danger"    : dangerZone
             };
+
           });
         });
       });
@@ -491,7 +509,7 @@
               {
                 status = 'Leave';
                 log_status = '<span class="text-danger"><b>이탈</b></span>';
-              }             
+              }
 
               //ClosestLine();
 
