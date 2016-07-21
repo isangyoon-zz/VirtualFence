@@ -15,6 +15,22 @@
 
     const DATABASE_URL  = 'mongodb://222.116.135.139/virtualfence';
     const IO            = Socket('http://222.116.135.139:3000');
+
+    const {ipcRenderer} = require('electron');
+    const  ElectronSettings  = require('electron-settings');
+
+    var preference    = new ElectronSettings({
+      "configDirPath"   : __dirname + '/../',
+      "configFileName"  : 'setting'
+    });
+
+    const warning_zone_space  = preference.get('warning_zone_space');
+    const danger_zone_space   = preference.get('danger_zone_space');
+    const safety_zone_volume  = preference.get('safety_zone_volume');
+    const warning_zone_volume = preference.get('warning_zone_volume');
+    const danger_zone_volume  = preference.get('danger_zone_volume');
+    const escape_zone_volume  = preference.get('escape_zone_volume');
+    const flag                = preference.get('flag');
   </script>
 
   <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Roboto:300,400,500,700" type="text/css">
@@ -58,8 +74,11 @@
     GoogleMaps.LIBRARIES  = ['geometry', 'drawing'];
     GoogleMaps.load((google) => {
       map = new google.maps.Map(document.getElementById('map'), {
-        "center"  : new google.maps.LatLng(36.94929, 127.90739),
-        "zoom"    : 18
+        "center"                  : new google.maps.LatLng(36.94929, 127.90739),
+        "zoom"                    : 18,
+        "disableDoubleClickZoom"  : true,
+        "disableDefaultUI"        : true,
+        "mapTypeControl"          : true
       });
 
       let drawingManager = new google.maps.drawing.DrawingManager({
@@ -85,8 +104,8 @@
 
         let geojson = toGeoJSON(polygon);
 
-        let safetyZone  = VirtualFence.Offset(geojson, -10, 'm'),
-            warningZone = VirtualFence.Offset(geojson, -5, 'm'),
+        let safetyZone  = VirtualFence.Offset(geojson, -danger_zone_space, 'm'),
+            warningZone = VirtualFence.Offset(geojson, -warning_zone_space, 'm'),
             dangerZone  = geojson;
 
         let safetyLayer = new GeoJSON(safetyZone, {
@@ -552,9 +571,7 @@
                   isWarning = VirtualFence.Inside(geojson, layers.warn),
                   isDanger = VirtualFence.Inside(geojson, layers.danger);
 
-              let status = 'Safety',
-                  log_status = '<span class="text-success">안전</span>';
-
+              let status, log_status;
               if(isSafety)
               {
                 status = 'Safety';
@@ -592,7 +609,10 @@
               /*
               IO.emit('animal alert', {
                 "uuid"    : uuid,
-                "status"  : status
+                "status"  : status,
+                "volume"  : volume,
+                "type"    :
+                "flag"    : flag
               });
               */
 

@@ -23,7 +23,8 @@
     const warning_zone_volume = preference.get('warning_zone_volume');
     const danger_zone_volume  = preference.get('danger_zone_volume');
     const escape_zone_volume  = preference.get('escape_zone_volume');
-    const flag  = preference.get('flag');
+    const type_of_sounds      = preference.get('type_of_sounds');
+    const flag                = preference.get('flag');
   </script>
 
   <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Roboto:300,400,500,700" type="text/css">
@@ -132,6 +133,12 @@
               <input type="radio" id="flag-2" class="mdl-radio__button" name="flag" value="2">
               <span class="mdl-radio__label">Dynamic Sound</span>
             </label>
+          </div>
+          <div>
+            <select id="type_of_sounds" name="type_of_sounds">
+              <option value="1">Dog</option>
+              <option value="2">Lion</option>
+            </select>
           </div>
         </div>
         <div class="mdl-card__menu">

@@ -54,7 +54,7 @@ function createWindow()
   });
 
   mainWindow.loadURL(`file://${__dirname}/public/index.html`);
-  mainWindow.webContents.openDevTools();
+  //mainWindow.webContents.openDevTools();
 
   mainWindow.once('ready-to-show', () => { mainWindow.show(); });
   mainWindow.on('closed', () => {

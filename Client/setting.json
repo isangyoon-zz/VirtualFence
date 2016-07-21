@@ -1,11 +1,11 @@
 {
-  "warning_zone_space": "7",
+  "warning_zone_space": "3",
   "safety_zone_space": "0",
-  "danger_zone_space": "10",
+  "danger_zone_space": "5",
   "safety_zone_volume": "0",
   "warning_zone_volume": "5",
   "danger_zone_volume": "10",
   "escape_zone_volume": "15",
   "type_of_sounds": "1",
-  "flag": "0"
+  "flag": "1"
 }
