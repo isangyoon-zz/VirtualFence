@@ -13,8 +13,8 @@
     window.GoogleMaps   = require('GoogleMapsAPI');
     window.TableSort    = require('tablesort');
 
-    const DATABASE_URL  = 'mongodb://222.116.135.139/virtualfence';
-    const IO            = Socket('http://222.116.135.139:3000');
+    const DATABASE_URL  = 'mongodb://localhost/virtualfence';
+    const IO            = Socket('http://localhost:3000');
 
     const {ipcRenderer} = require('electron');
     const  ElectronSettings  = require('electron-settings');
@@ -30,6 +30,7 @@
     const warning_zone_volume = preference.get('warning_zone_volume');
     const danger_zone_volume  = preference.get('danger_zone_volume');
     const escape_zone_volume  = preference.get('escape_zone_volume');
+    const type_of_sounds      = preference.get('type_of_sounds');
     const flag                = preference.get('flag');
   </script>
 
@@ -41,8 +42,6 @@
   <link rel="stylesheet" href="./css/index.css" type="text/css">
 
   <script src="../node_modules/material-design-lite/material.min.js" defer></script>
-  <script src="./js/geojson.js"></script>
-  <script src="./js/virtualfence.js"></script>
 </head>
 <body>
   <div class="mdl-grid mdl-grid--no-spacing">
@@ -53,9 +52,9 @@
       <table class="mdl-data-table mdl-js-data-table mdl-shadow--2dp">
         <thead>
           <tr>
-            <th>Animal</th>
-            <th>Distance</th>
-            <th>Status</th>
+            <th class="animal">Animal</th>
+            <th class="distance">Distance</th>
+            <th class="status">Status</th>
           </tr>
         </thead>
         <tbody id="log">
@@ -73,6 +72,86 @@
     GoogleMaps.VERSION    = '3.exp';
     GoogleMaps.LIBRARIES  = ['geometry', 'drawing'];
     GoogleMaps.load((google) => {
+      // Convert Google Maps Polygon to GeoJSON Feature
+      google.maps.Polygon.prototype.toGeoJSON = function() {
+        let array = [];
+        polygon.getPath().forEach((latLng, i) => {
+          array.push([latLng.lng(), latLng.lat()]);
+        });
+        array.push(array[0]);
+
+        let geojson = {
+          "type"        : "Feature",
+          "geometry"    : {
+            "type"        : "Polygon",
+            "coordinates" : [array]
+          },
+          "properties"  : {}
+        };
+
+        return geojson;
+      };
+
+      // Convert Google Maps LatLng to GeoJSON Feature
+      google.maps.LatLng.prototype.toGeoJSON = function() {
+        let geojson = {
+          "type"        : "Feature",
+          "geometry"    : {
+            "type"        : "Point",
+            "coordinates" : [this.lng(), this.lat()]
+          },
+          "properties"  : {}
+        };
+
+        return geojson;
+      };
+
+      // Find Closest Point
+			google.maps.Polygon.prototype.closest = function(pt) {
+        let edges         = this.toArray(),
+            point         = pt.getPosition().toPoint();
+
+        let closest_edge  = PolyK.ClosestEdge(edges, point.x, point.y);
+
+        let google_point  = new google.maps.Point(closest_edge.point.x, closest_edge.point.y),
+            google_latlng = google_point.toLatLng();
+
+        let geojson = google_latlng.toGeoJSON();
+
+        return geojson;
+			};
+
+      // Convert Polygon to Array
+			google.maps.Polygon.prototype.toArray = function() {
+				let array = [];
+
+				this.getPath().forEach((point, i) => {
+          let pt = point.toPoint();
+
+          array.push(pt.x);
+          array.push(pt.y);
+        });
+
+				return array;
+			};
+
+      // Convert Google Map LatLng to Point(Pixel)
+			google.maps.LatLng.prototype.toPoint = function() {
+        let latlng  = map.getProjection().fromLatLngToPoint(this),
+            zoom    = Math.pow(2, map.getZoom());
+
+        return new google.maps.Point(latlng.x * zoom, latlng.y * zoom);
+			};
+
+			// Convert Point(Pixel) to Google Map LatLng
+			google.maps.Point.prototype.toLatLng = function() {
+        let zoom  = Math.pow(2, map.getZoom()),
+            point = new google.maps.Point(this.x / zoom, this.y / zoom);
+
+        return map.getProjection().fromPointToLatLng(point);
+			};
+
+      // Start Program
       map = new google.maps.Map(document.getElementById('map'), {
         "center"                  : new google.maps.LatLng(36.94929, 127.90739),
         "zoom"                    : 18,
@@ -195,8 +274,8 @@
 
             let geojson = toGeoJSON(polygon);
 
-            let safetyZone  = VirtualFence.Offset(geojson, -10, 'm'),
-                warningZone = VirtualFence.Offset(geojson, -5, 'm'),
+            let safetyZone  = VirtualFence.Offset(geojson, -danger_zone_space, 'm'),
+                warningZone = VirtualFence.Offset(geojson, -warningZone, 'm'),
                 dangerZone  = geojson;
 
             let safetyLayer = new GeoJSON(safetyZone, {
@@ -229,11 +308,7 @@
               "warning"   : warningZone,
               "danger"    : dangerZone
             };
-
           });
-
-
-
         });
 
         function insertFence(database, callback)
@@ -466,59 +541,6 @@
 
         return geojson;
       }
-
-      // Convert Polygon to PolyK DataStructure
-      function getEdges(polygon)
-      {
-        let edges = [];
-
-        polygon.getPath().forEach((path, key) => {
-          edges.push(path);
-        });
-
-        return edges.map((edge, key) => {
-          return key ? [edges[key - 1], edge] : [edges[edges.length - 1], edge];
-        });
-      }
-
-      // Convert google.maps.Polygon to GeoJSON
-      function toArray(polygon)
-      {
-        let array = [];
-
-        polygon.getPath().forEach((path, i) => {
-          let point = toPoint(path);
-
-          array.push(point.x);
-          array.push(point.y);
-        });
-
-        return array;
-      }
-
-      function ClosestLine(point, polygon)
-      {
-        let lines = toArray(polygon);
-        let p = toPoint(point);
-
-        return PolyK.ClosestEdge(lines, p.x, p.y);
-      }
-
-      function toPoint(latLng)
-      {
-        var latlng = map.getProjection().fromLatLngToPoint(this);
-      	var zoom = Math.pow(2, map.getZoom());
-
-      	return new google.maps.Point(latlng.x * zoom, latlng.y * zoom);
-      }
-
-      function toLatLng(point)
-      {
-        var zoom = Math.pow(2, map.getZoom());
-        var p = new google.maps.Point(point.x / zoom, point.y / zoom);
-
-        return map.getProjection().fromPointToLatLng(p);
-      }
     });
   </script>
   <script>
@@ -564,39 +586,41 @@
             else
             {
               let animal = animals.get(uuid),
-                  marker = animal.marker,
-                  geojson = animal.geojson;
+                  marker = animal.marker;
 
-              let isSafety = VirtualFence.Inside(geojson, layers.safe),
-                  isWarning = VirtualFence.Inside(geojson, layers.warn),
-                  isDanger = VirtualFence.Inside(geojson, layers.danger);
+              let isSafety = inside(animal.geojson, layers.safety),
+                  isWarning = inside(animal.geojson, layers.warning),
+                  isDanger = inside(animal.geojson, layers.danger);
 
-              let status, log_status;
+              let closest = [polygon.safety.closest(marker), polygon.warning.closest(marker), polygon.danger.closest(marker)];
+              let distance = [Number(VirtualFence.Distance(closest[0], animal.geojson)), Number(VirtualFence.Distance(closest[1], animal.geojson)), Number(VirtualFence.Distance(closest[2], animal.geojson))];
+
+              let status, log_status, volume;
               if(isSafety)
               {
                 status = 'Safety';
+                volume = safety_zone_volume;
                 log_status = '<span class="text-success">안전</span>';
               }
               else if(isWarning)
               {
                 status = 'Warning';
+                volume = warning_zone_volume;
                 log_status = '<span class="text-warning">경고</span>';
               }
               else if(isDanger)
               {
                 status = 'Danger';
+                volume = danger_zone_volume;
                 log_status = '<span class="text-danger">위험</span>';
               }
               else
               {
                 status = 'Leave';
+                volume = escape_zone_volume;
                 log_status = '<span class="text-danger"><b>이탈</b></span>';
               }
 
-              //ClosestLine();
-
-              let distance = [];
-              //distance[0] =
 
               marker.setPosition({
                 "lat": latitude,
@@ -604,36 +628,36 @@
               });
               marker.setTitle(String(uuid));
               marker.setOpacity((status === 'Leave') ? 0.35 : 1);
-              geojson.geometry.coordinates = [longitude, latitude];
+              animal.geojson.geometry.coordinates = [longitude, latitude];
 
-              /*
               IO.emit('animal alert', {
                 "uuid"    : uuid,
                 "status"  : status,
+                "type"    : type_of_sounds,
                 "volume"  : volume,
-                "type"    :
                 "flag"    : flag
               });
-              */
 
-              /*
               let log_index = uuid,
-                  log_check = $.find('#' + log_index).length == 0 ? false : true;
+                  log_check = ($.find('#' + log_index).length === 0) ? false : true;
 
-              if(log_check == true)
+              if(log_check === true)
               {
-                $('#' + log_index).html('<td class="text-center">' + uuid + '</td><td class="text-center">' + '0' + '</td><td class="text-center">' + log_status + '</td>');
+                $('#' + log_index).html('<td class="text-center">' + uuid + '</td><td class="text-center">' + distance[0].toFixed(2) + 'm</td><td class="text-center">' + log_status + '</td>');
               }
               else
               {
-                $('#log').append('<tr id="' + log_index + '"><td class="text-center">' + uuid + '</td><td class="text-center">' + '0' + '</td><td class="text-center">' + log_status + '</td></tr>');
+                $('#log').append('<tr id="' + log_index + '"><td class="text-center">' + uuid + '</td><td class="text-center">' + distance[0].toFixed(2) + 'm</td><td class="text-center">' + log_status + '</td></tr>');
               }
-              */
             }
           }
         });
       });
     });
   </script>
+  <script src="./js/geojson.js"></script>
+  <script src="./js/virtualfence.js"></script>
+  <script src="./js/polyk.js"></script>
+  <script src="./js/inside.js"></script>
 </body>
 </html>

@@ -1,5 +1,5 @@
 const { app, BrowserWindow, dialog, Menu, MenuItem, ipcMain } = require('electron');
-const  ElectronSettings                                   = require('electron-settings');
+const  ElectronSettings                                       = require('electron-settings');
 
 var mainWindow    = null,
     settingWindow = null;
@@ -54,7 +54,7 @@ function createWindow()
   });
 
   mainWindow.loadURL(`file://${__dirname}/public/index.html`);
-  //mainWindow.webContents.openDevTools();
+  mainWindow.webContents.openDevTools();
 
   mainWindow.once('ready-to-show', () => { mainWindow.show(); });
   mainWindow.on('closed', () => {

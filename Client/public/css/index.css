@@ -1,6 +1,10 @@
 html, body {margin: 0; padding: 0; width: 100%; height: 100%;}
 body {font: 12px/14px 'Jeju Gothic', sans-serif;}
+
 table {margin: auto; width: 96%;}
+th.animal   {width: 15%;}
+th.distance {width: 66%;}
+th.status   {width: 15%;}
 
 .mdl-grid, .mdl-grid--no-spacing {height: 100%;}
 .mdl-cell, .mdl-cell--3-col, .mdl-cell--9-col {height: 100%;}
@@ -13,3 +17,8 @@ table {margin: auto; width: 96%;}
 .quiet-scroll pre::-webkit-scrollbar-track, .quiet-scroll::-webkit-scrollbar-track {background: none;}
 .quiet-scroll pre::-webkit-scrollbar-thumb, .quiet-scroll::-webkit-scrollbar-thumb {background: rgba(0, 0, 0, 0.4); border-radius: 0;}
 .quiet-scroll pre::-webkit-scrollbar:hover, .quiet-scroll::-webkit-scrollbar:hover {background: rgba(0, 0, 0, 0.4);}
+
+.text-center  {text-align: center !important;}
+.text-success {color: #286500;}
+.text-warning {color: #b20000;}
+.text-danger  {color: #b20000;}

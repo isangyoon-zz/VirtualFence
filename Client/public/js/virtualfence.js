@@ -445,7 +445,7 @@ module.exports.Inside = Inside;
 
 function inCircuit(point, circuit)
 {
-  var isInside = false;
+  let isInside = false;
 
   for (let i = 0, j = circuit.length - 1; i < circuit.length ;  j = i++)
   {
